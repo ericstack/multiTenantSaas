@@ -1,0 +1,11 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "postgres",
+    "database": "saas_db",
+    "host": "locahost",
+    "port": 5432,
+    "dialect": "postgres",
+    "logging": false
+  }
+}
