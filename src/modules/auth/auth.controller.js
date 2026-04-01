@@ -29,7 +29,7 @@ import { User, Tenant, Role } from '../../../models/index.js';
     });
     
     const tenantId = tenantResult.id;
-
+console.log(tenantId)
     // 2. Create admin role if not exists
     let role = await Role.findOne({
       where: { name: 'admin' }
@@ -37,35 +37,35 @@ import { User, Tenant, Role } from '../../../models/index.js';
 
     let roleId;
 
-    if (!role == null) {
-      const newRole = await Role.create({ name: 'admin' });
-      
+    if (role == null) {
+
+      const newRole = await Role.create({ tenant_id: tenantId, name: 'admin' });
       roleId = newRole.id;
     } else {
       roleId = role.id;
     }
-    console.log("Admin role created with ID:", role);
-    // 3. Hash password
-    // const hashedPassword = await bcrypt.hash(password, 10);
+    // console.log("Admin role created with ID:", role);
+    //3. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // // 4. Create user
-    // const userResult = await User.create({
-    //   tenant_id: tenantId,
-    //   email: email,
-    //   password: hashedPassword,
-    //   role_id: roleId
-    // });
+    // 4. Create user
+    const userResult = await User.create({
+      tenant_id: tenantId,
+      email: email,
+      password: hashedPassword,
+      role_id: roleId
+    });
 
-    // const userId = userResult.id;
+    const userId = userResult.id;
     // console.log("User created with ID:", userId);
 
     res.json({
       message: "Registered successfully",
-      // user: {
-      //   id: userResult.id,
-      //   email: userResult.email,
-      //   tenant_id: userResult.tenant_id
-      // }
+      user: {
+        id: userResult.id,
+        email: userResult.email,
+        tenant_id: userResult.tenant_id
+      }
     });
   } catch (err) {
     console.error(err);
