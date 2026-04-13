@@ -1,76 +1,109 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { sequelize } from '../../../models/index.js';
-import { User, Tenant, Role } from '../../../models/index.js';
+import bcrypt, { compare } from "bcrypt";
 
- const registerUser = async(req, res) => {
-  const { company_name, subdomain, email, password } = req.body;
+import { User, Tenant, Role, Session } from "../../models/index.js";
+import authService from "./auth.service.js";
+import {
+  emailVerification,
+  checkEmailDuplicate,
+} from "../../utils/emailVerification.js";
+import { hashPassword, passwordLengthCheck } from "../../utils/hashing.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "./token.service.js";
 
+export const registerTenant = async (req, res) => {
   try {
-
-    //check if required fields is not empty
-    if (!company_name || !subdomain || !email || !password) {
-      return res.status(400).json({ error: "All fields are required" });
+    const result = await authService.register(req.body);
+    if (result.error) {
+      return res.status(400).json(result);
     }
-
-    //check if tenant with same subdomain exists
-    const tenantCheck = await Tenant.findOne({
-      where: { subdomain },
-    });
-
-    if (tenantCheck) {
-      return res.status(400).json({ error: "Tenant with this subdomain already exists" });
-    }
-
-    // 1. Create tenant
-    const tenantResult = await Tenant.create({
-      name: company_name,
-      subdomain: subdomain
-    });
-    
-    const tenantId = tenantResult.id;
-    console.log("Tenant created with ID:", tenantId);
-
-    // 2. Create admin role if not exists
-    let role = await Role.findOne({
-      where: { name: 'admin' }
-    });
-
-    let roleId;
-
-    if (!role) {
-      const newRole = await Role.create({ name: 'admin' });
-      roleId = newRole.id;
-    } else {
-      roleId = role.id;
-    }
-
-    // 3. Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 4. Create user
-    const userResult = await User.create({
-      tenant_id: tenantId,
-      email: email,
-      password: hashedPassword,
-      role_id: roleId
-    });
-
-    const userId = userResult.id;
-    console.log("User created with ID:", userId);
-
-    res.json({
-      message: "Registered successfully",
-      user: {
-        id: userResult.id,
-        email: userResult.email,
-        tenant_id: userResult.tenant_id
-      }
-    });
+    res.status(201).json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Registration failed" });
   }
-}
+};
+export const loginUser = async (req, res) => {
+  try {
+    const result = await authService.login(req);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Login failed" });
+  }
+};
 
-export default registerUser;
+export const logoutUser = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  try {
+    const result = await authService.logout(refreshToken);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Logout failed" });
+  }
+};
+
+export const refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  try {
+    const result = await authService.refreshToken(refreshToken);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to refresh token" });
+  }
+};
+export const getCurrentUser = async (req, res) => {
+  try {
+    const result = await authService.getCurrentUser(req.body.user_id);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+};
+
+// Get all active sessions for the current user - admin only
+export const getUserSessions = async (req, res) => {
+  try {
+    const result = await authService.getUserSessions(req.user.user_id);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+};
+
+// Revoke a specific session by ID - admin only
+export const revokeSession = async (req, res) => {
+  try {
+    const result = await authService.revokeSession(req.params.sessionId);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to revoke session" });
+  }
+};

@@ -6,7 +6,6 @@ import { fileURLToPath, pathToFileURL } from "url";
 import dotenv from "dotenv";
 dotenv.config();
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -18,7 +17,11 @@ const config = {
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
   dialect: "postgres",
-  logging: false
+  logging: false,
+  define: {
+    schema: "public", // <-- THIS is correct
+    timestamps: false,
+  },
 };
 const db = {};
 
@@ -26,15 +29,16 @@ const sequelize = new Sequelize(
   config.database,
   config.username,
   config.password,
-  config
+  config,
 );
 
 // Read all model files
-const files = fs.readdirSync(__dirname).filter(file =>
-  file.indexOf(".") !== 0 &&
-  file !== basename &&
-  file.slice(-3) === ".js"
-);
+const files = fs
+  .readdirSync(__dirname)
+  .filter(
+    (file) =>
+      file.indexOf(".") !== 0 && file !== basename && file.slice(-3) === ".js",
+  );
 
 // Import models using file URL
 for (const file of files) {
@@ -45,12 +49,12 @@ for (const file of files) {
 }
 
 // Run associations
-Object.keys(db).forEach(modelName => {
+Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
 });
 
-export const { User, Tenant, Role, Permission, RolePermission } = db;
+export const { User, Tenant, Role, Permission, RolePermission, Session } = db;
 export { sequelize };
 export default db;

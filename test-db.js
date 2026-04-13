@@ -3,17 +3,12 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-  'saas_db',
-  'postgres',
-  'postgres',
-  {
-    host: 'postgres',
-    port: '5432',
-    dialect: "postgres",
-    logging: false,
-  }
-);
+const sequelize = new Sequelize("saas_db", "postgres", "postgres", {
+  host: "127.0.0.1",
+  port: "5433",
+  dialect: "postgres",
+  logging: false,
+});
 
 try {
   await sequelize.authenticate();
