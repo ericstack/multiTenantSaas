@@ -1,14 +1,17 @@
 import jwt from "jsonwebtoken";
 
-export function generateAccessToken(user) {
+export function generateAccessToken(user, permissions) {
   return jwt.sign(
     {
       user_id: user.id,
       tenant_id: user.tenant_id,
-      role: user.role,
+      permissions: permissions,
+      is_super_admin: user.is_super_admin || false,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "15m" },
+    {
+      expiresIn: "15m",
+    },
   );
 }
 

@@ -1,4 +1,5 @@
 import userService from "./user.service.js";
+import { logAction } from "../../services/audit.service.js";
 
 // CREATE USER
 export const createUser = async (req, res, next) => {
@@ -33,6 +34,10 @@ export const getUser = async (req, res, next) => {
     const { id } = req.params;
 
     const user = await userService.getUserById(id, tenant_id);
+
+    // 🔥 Only log if accessing OTHER user
+    if (req.user.user_id !== user.id) {
+    }
 
     res.json(user);
   } catch (error) {

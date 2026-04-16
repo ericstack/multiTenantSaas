@@ -1,5 +1,5 @@
 import { User } from "../../models/index.js";
-import { hashPassword } from "../../utils/hash.js";
+import { hashPassword } from "../../utils/hashing.js";
 
 // CREATE USER
 async function createUser(data, tenant_id) {

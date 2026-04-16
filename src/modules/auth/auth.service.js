@@ -1,4 +1,4 @@
-import { User, Tenant, Role, Session } from "../../models/index.js";
+import { User, Tenant, Role, Session, Permission } from "../../models/index.js";
 import bcrypt, { compare } from "bcrypt";
 import {
   emailVerification,
@@ -123,8 +123,9 @@ async function login(data) {
       return { error: "Invalid password" };
     }
 
+    const permissions = await getUserPermissions(user);
     //generate JWT token
-    const accessToken = generateAccessToken(user);
+    const accessToken = generateAccessToken(user, permissions);
     const refreshToken = generateRefreshToken(user);
 
     const savedSession = await createSession(user.id, refreshToken, [
@@ -138,6 +139,7 @@ async function login(data) {
         id: user.id,
         email: user.email,
         tenant_id: user.tenant_id,
+        permissions: permissions,
         accessToken: accessToken,
         refreshToken: refreshToken,
       },
@@ -154,7 +156,7 @@ async function logout(refreshToken) {
     }
 
     // Delete session from database
-    await revokeSession(refresh_token);
+    await revokeSession(refreshToken);
 
     return { message: "Logout successful" };
   } catch (err) {
@@ -204,38 +206,54 @@ async function refreshToken(refreshToken) {
     return { error: "Failed to refresh token" };
   }
 }
-async function getCurrentUser(user_id) {
-  console.log(user_id);
+async function getMe(user_id) {
   try {
     const user = await User.findByPk(user_id, {
       attributes: ["id", "email", "tenant_id"],
+      include: {
+        model: Role,
+        attributes: ["name"],
+        include: {
+          model: Permission,
+          attributes: ["name"],
+        },
+      },
     });
-    return { user };
+    if (!user) throw new Error("User not found");
+
+    const roles = user.Roles.map((r) => r.name);
+
+    const permissions = [
+      ...new Set(user.Roles.flatMap((r) => r.Permissions.map((p) => p.name))),
+    ];
+
+    return {
+      user_id: user.id,
+      tenant_id: user.tenant_id,
+      email: user.email,
+      roles,
+      permissions,
+    };
   } catch (err) {
     console.error(err);
     return { error: "Failed to fetch user" };
   }
 }
 
-async function getUserPermissions(user_id) {
-  const user = await User.findByPk(user_id, {
-    include: [
-      {
-        model: Role,
-        include: [Permission],
-      },
-    ],
+async function getUserPermissions(user) {
+  const roles = await user.getRoles({
+    include: [Permission],
   });
 
   const permissions = [];
 
-  user.Roles.forEach((role) => {
+  roles.forEach((role) => {
     role.Permissions.forEach((p) => {
       permissions.push(p.name);
     });
   });
 
-  return [...new Set(permissions)]; // remove duplicates
+  return [...new Set(permissions)];
 }
 
 export default {
@@ -243,6 +261,6 @@ export default {
   login,
   logout,
   refreshToken,
-  getCurrentUser,
+  getMe,
   getUserPermissions,
 };

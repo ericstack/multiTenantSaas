@@ -1,17 +1,4 @@
-import bcrypt, { compare } from "bcrypt";
-
-import { User, Tenant, Role, Session } from "../../models/index.js";
 import authService from "./auth.service.js";
-import {
-  emailVerification,
-  checkEmailDuplicate,
-} from "../../utils/emailVerification.js";
-import { hashPassword, passwordLengthCheck } from "../../utils/hashing.js";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} from "./token.service.js";
 
 export const registerTenant = async (req, res) => {
   try {
@@ -69,7 +56,7 @@ export const refreshToken = async (req, res) => {
 };
 export const getCurrentUser = async (req, res) => {
   try {
-    const result = await authService.getCurrentUser(req.body.user_id);
+    const result = await authService.getMe(req.body.user_id);
     if (result.error) {
       return res.status(400).json(result);
     }

@@ -15,7 +15,7 @@ const config = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: Number(process.env.DB_PORT),
   dialect: "postgres",
   logging: false,
   define: {
@@ -55,6 +55,42 @@ Object.keys(db).forEach((modelName) => {
   }
 });
 
-export const { User, Tenant, Role, Permission, RolePermission, Session } = db;
+export const {
+  User,
+  Tenant,
+  Role,
+  Permission,
+  RolePermission,
+  Session,
+  UserRole,
+  AuditLog,
+} = db;
+
+// Users ↔ Roles
+User.belongsToMany(Role, {
+  through: UserRole,
+  foreignKey: "user_id",
+  otherKey: "role_id",
+});
+
+Role.belongsToMany(User, {
+  through: UserRole,
+  foreignKey: "role_id",
+  otherKey: "user_id",
+});
+
+// Roles ↔ Permissions
+Role.belongsToMany(Permission, {
+  through: RolePermission,
+  foreignKey: "role_id",
+  otherKey: "permission_id",
+});
+
+Permission.belongsToMany(Role, {
+  through: RolePermission,
+  foreignKey: "permission_id",
+  otherKey: "role_id",
+});
+
 export { sequelize };
 export default db;

@@ -1,8 +1,14 @@
 export function authorize(requiredPermission) {
   return (req, res, next) => {
-    const userPermissions = req.user.permissions || [];
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    if (!userPermissions.includes(requiredPermission)) {
+    // 🔥 SUPER ADMIN BYPASS
+    if (user.is_super_admin) return next();
+    console.log(user);
+    if (!user.permissions.includes(requiredPermission)) {
       return res.status(403).json({
         message: "Forbidden: insufficient permissions",
       });
