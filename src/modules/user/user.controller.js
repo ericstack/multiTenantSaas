@@ -1,5 +1,4 @@
 import userService from "./user.service.js";
-import { logAction } from "../../services/audit.service.js";
 
 // CREATE USER
 export const createUser = async (req, res, next) => {

@@ -4,10 +4,9 @@ export function authorize(requiredPermission) {
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-
     // 🔥 SUPER ADMIN BYPASS
     if (user.is_super_admin) return next();
-    console.log(user);
+
     if (!user.permissions.includes(requiredPermission)) {
       return res.status(403).json({
         message: "Forbidden: insufficient permissions",
