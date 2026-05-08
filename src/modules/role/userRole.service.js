@@ -61,3 +61,21 @@ export async function getUserRoles(reqUser, targetUserId) {
 
   return user.Roles;
 }
+export async function getRolesByUserId(reqUser, targetUserId) {
+  const user = await User.findOne({
+    where: applyTenantFilter({ user: reqUser }, { id: targetUserId }),
+    include: [
+      {
+        model: Role,
+        attributes: ["id", "name", "description"],
+        through: { attributes: [] },
+      },
+    ],
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user.Roles;
+}

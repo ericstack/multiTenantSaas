@@ -37,3 +37,19 @@ export const getRoles = async (req, res, next) => {
     next(err);
   }
 };
+export async function getRolesByUserId(req, res, next) {
+  console.log("this");
+  try {
+    const roles = await userRoleService.getRolesByUserId(
+      req.user,
+      req.params.id,
+    );
+
+    res.json({
+      user_id: req.params.id,
+      roles,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
